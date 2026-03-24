@@ -15,6 +15,8 @@ class Conv2D(Layer):
         # MODIFICAR: Añadir nuevo if-else para otros algoritmos de convolución
         if conv_algo == 0:
             self.mode = 'direct' 
+        elif conv_algo == 1:
+            self.mode = 'im2col'
         else:
             print(f"Algoritmo {conv_algo} no soportado aún")
             self.mode = 'direct' 
@@ -60,8 +62,10 @@ class Conv2D(Layer):
         # PISTA: Usar estos if-else si implementas más algoritmos de convolución
         if self.mode == 'direct':
             return self._forward_direct(input)
+        elif self.mode == 'im2col':
+            return self._forward_im2col(input)
         else:
-            raise ValueError("Mode must be 'direct")
+            raise ValueError("Mode must be 'direct' or 'im2col'")
 
     def backward(self, grad_output, learning_rate):
         # ESTO NO ES NECESARIO YA QUE NO VAIS A HACER BACKPROPAGATION
@@ -136,4 +140,43 @@ class Conv2D(Layer):
 
         return grad_input
 
+    def _forward_im2col(self, input):
+        B = input.shape[0]
+        cols, out_h, out_w = self._im2col(input)
+
+        W = self.kernels.reshape(self.out_channels, -1)   # (out_channels, C*KH*KW)
+        out = W @ cols                                    # (out_channels, B*out_h*out_w)
+        out += self.biases[:, None]
+
+        out = out.reshape(self.out_channels, B, out_h, out_w)
+        out = out.transpose(1, 0, 2, 3)
+        return out.astype(np.float32, copy=False)
+
+    def _im2col(self, x):
+        batch_size, in_channels, in_h, in_w = x.shape
+        k_h = k_w = self.kernel_size
+
+        if self.padding > 0:
+            x_padded = np.pad(
+                x,
+                ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)),
+                mode='constant'
+            ).astype(np.float32)
+        else:
+            x_padded = x.astype(np.float32, copy=False)
+
+        out_h = (x_padded.shape[2] - k_h) // self.stride + 1
+        out_w = (x_padded.shape[3] - k_w) // self.stride + 1
+
+        cols = np.zeros((batch_size, in_channels * k_h * k_w, out_h * out_w), dtype=np.float32)
+
+        col = 0
+        for i in range(out_h):
+            for j in range(out_w):
+                patch = x_padded[:, :, i*self.stride:i*self.stride+k_h, j*self.stride:j*self.stride+k_w]
+                cols[:, :, col] = patch.reshape(batch_size, -1)
+                col += 1
+
+        cols = cols.transpose(1, 0, 2).reshape(in_channels * k_h * k_w, batch_size * out_h * out_w)
+        return cols, out_h, out_w
     # PISTA: Se te ocurren otros algoritmos de convolución?
