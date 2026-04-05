@@ -23,13 +23,9 @@ class Dense(Layer):
 
         self.input = None
 
-    def forward(self, input, training=True):  # input: [batch_size x in_features]
-        self.input = np.array(input).astype(np.float32)  # Ensure input is float for numerical stability
-        batch_size = self.input.shape[0]
-
-        output = np.zeros((batch_size, self.out_features),dtype=np.float32)
- 
-        output = matmul_biasses(self.input, self.weights, output, self.biases)
+    def forward(self, input, training=True):
+        self.input = np.asarray(input, dtype=np.float32)
+        output = (self.input @ self.weights) + self.biases
         self.output = output
         return output
 
