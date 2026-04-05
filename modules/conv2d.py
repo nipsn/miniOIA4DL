@@ -168,15 +168,13 @@ class Conv2D(Layer):
         out_h = (x_padded.shape[2] - k_h) // self.stride + 1
         out_w = (x_padded.shape[3] - k_w) // self.stride + 1
 
-        cols = np.zeros((batch_size, in_channels * k_h * k_w, out_h * out_w), dtype=np.float32)
+        windows = np.lib.stride_tricks.sliding_window_view(
+            x_padded, (k_h, k_w), axis=(2, 3)
+        )
+        windows = windows[:, :, ::self.stride, ::self.stride, :, :]
 
-        col = 0
-        for i in range(out_h):
-            for j in range(out_w):
-                patch = x_padded[:, :, i*self.stride:i*self.stride+k_h, j*self.stride:j*self.stride+k_w]
-                cols[:, :, col] = patch.reshape(batch_size, -1)
-                col += 1
-
-        cols = cols.transpose(1, 0, 2).reshape(in_channels * k_h * k_w, batch_size * out_h * out_w)
-        return cols, out_h, out_w
+        cols = windows.transpose(0, 2, 3, 1, 4, 5).reshape(
+            batch_size * out_h * out_w, in_channels * k_h * k_w
+        )
+        return cols.T.astype(np.float32, copy=False), out_h, out_w
     # PISTA: Se te ocurren otros algoritmos de convolución?
