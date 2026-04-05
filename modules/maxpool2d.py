@@ -12,10 +12,12 @@ class MaxPool2D(Layer):
 
         # Fast path for 2x2 kernel with stride 2 and even dimensions (OIAnet)
         if self.kernel_size == 2 and self.stride == 2 and H % 2 == 0 and W % 2 == 0:
-            return self._forward_fast_2x2(input)
+            if training:
+                return self._forward_fast_2x2_training(input)
+            return self._forward_fast_2x2_inference(input)
 
         return self._forward_standard(input)
-
+    
     def _forward_standard(self, input):
         self.input = input
         B, C, H, W = input.shape
@@ -46,7 +48,7 @@ class MaxPool2D(Layer):
 
         return output
 
-    def _forward_fast_2x2(self, input):
+    def _forward_fast_2x2_training(self, input):
         self.input = input
         B, C, H, W = input.shape
 
@@ -74,6 +76,16 @@ class MaxPool2D(Layer):
         self.max_indices[..., 1] = base_cols + col_off
 
         return output
+
+    def _forward_fast_2x2_inference(self, input):
+        x00 = input[:, :, 0::2, 0::2]
+        x01 = input[:, :, 0::2, 1::2]
+        x10 = input[:, :, 1::2, 0::2]
+        x11 = input[:, :, 1::2, 1::2]
+        return np.maximum(
+            np.maximum(x00, x01),
+            np.maximum(x10, x11)
+        )
 
     def backward(self, grad_output, learning_rate=None):
         B, C, H, W = self.input.shape

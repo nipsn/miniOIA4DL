@@ -24,10 +24,14 @@ class Dense(Layer):
         self.input = None
 
     def forward(self, input, training=True):
-        self.input = np.asarray(input, dtype=np.float32)
-        output = (self.input @ self.weights) + self.biases
-        self.output = output
-        return output
+      x = np.asarray(input, dtype=np.float32)
+      output = (x @ self.weights) + self.biases
+
+      if training:
+          self.input = x
+          self.output = output
+
+      return output
 
     def backward(self, grad_output, learning_rate):
         grad_output = np.array(grad_output).astype(np.float32)  # Ensure grad_output is float for numerical stability

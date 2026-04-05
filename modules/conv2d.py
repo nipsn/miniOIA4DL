@@ -60,7 +60,8 @@ class Conv2D(Layer):
         self.biases = weights['biases']
     
     def forward(self, input, training=True):
-        self.input = input
+        if training:
+            self.input = input
         # PISTA: Usar estos if-else si implementas más algoritmos de convolución
         if self.mode == 'direct':
             return self._forward_direct(input)
