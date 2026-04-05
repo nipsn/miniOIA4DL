@@ -7,7 +7,16 @@ class MaxPool2D(Layer):
         self.kernel_size = kernel_size
         self.stride = stride
 
-    def forward(self, input, training=True):  # input: np.ndarray of shape [B, C, H, W]
+    def forward(self, input, training=True):
+        B, C, H, W = input.shape
+
+        # Fast path for 2x2 kernel with stride 2 and even dimensions (OIAnet)
+        if self.kernel_size == 2 and self.stride == 2 and H % 2 == 0 and W % 2 == 0:
+            return self._forward_fast_2x2(input)
+
+        return self._forward_standard(input)
+
+    def _forward_standard(self, input):
         self.input = input
         B, C, H, W = input.shape
         KH, KW = self.kernel_size, self.kernel_size
@@ -34,6 +43,35 @@ class MaxPool2D(Layer):
 
                         output[b, c, i, j] = max_val
                         self.max_indices[b, c, i, j] = (h_start + max_idx[0], w_start + max_idx[1])
+
+        return output
+
+    def _forward_fast_2x2(self, input):
+        self.input = input
+        B, C, H, W = input.shape
+
+        out_h = H // 2
+        out_w = W // 2
+
+        x00 = input[:, :, 0::2, 0::2]
+        x01 = input[:, :, 0::2, 1::2]
+        x10 = input[:, :, 1::2, 0::2]
+        x11 = input[:, :, 1::2, 1::2]
+
+        stacked = np.stack((x00, x01, x10, x11), axis=-1)   # (B, C, out_h, out_w, 4)
+
+        output = np.max(stacked, axis=-1)
+        arg = np.argmax(stacked, axis=-1)                   # valores 0,1,2,3
+
+        row_off = arg // 2
+        col_off = arg % 2
+
+        base_rows = (2 * np.arange(out_h))[None, None, :, None]
+        base_cols = (2 * np.arange(out_w))[None, None, None, :]
+
+        self.max_indices = np.empty((B, C, out_h, out_w, 2), dtype=int)
+        self.max_indices[..., 0] = base_rows + row_off
+        self.max_indices[..., 1] = base_cols + col_off
 
         return output
 
