@@ -17,6 +17,8 @@ class Conv2D(Layer):
             self.mode = 'direct' 
         elif conv_algo == 1:
             self.mode = 'im2col'
+        elif conv_algo == 2:
+            self.mode = 'im2colfused'
         else:
             print(f"Algoritmo {conv_algo} no soportado aún")
             self.mode = 'direct' 
@@ -64,15 +66,17 @@ class Conv2D(Layer):
             return self._forward_direct(input)
         elif self.mode == 'im2col':
             return self._forward_im2col(input)
+        elif self.mode == 'im2colfused':
+            return self._forward_im2col_fused(input)
         else:
-            raise ValueError("Mode must be 'direct' or 'im2col'")
+            raise ValueError("Mode must be 'direct', 'im2col' or 'im2colfused'")
 
     def backward(self, grad_output, learning_rate):
         # ESTO NO ES NECESARIO YA QUE NO VAIS A HACER BACKPROPAGATION
         if self.mode == 'direct':
             return self._backward_direct(grad_output, learning_rate)
         else:
-            raise ValueError("Mode must be 'direct' or 'im2col'")
+            raise ValueError("Backward is only implemented for mode 'direct'")
 
     # --- DIRECT IMPLEMENTATION ---
 
@@ -150,6 +154,28 @@ class Conv2D(Layer):
 
         out = out.reshape(self.out_channels, B, out_h, out_w)
         out = out.transpose(1, 0, 2, 3)
+        return out.astype(np.float32, copy=False)
+
+    def _forward_im2col_fused(self, input):
+        k_h = k_w = self.kernel_size
+
+        if self.padding > 0:
+            x_padded = np.pad(
+                input,
+                ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)),
+                mode='constant'
+            ).astype(np.float32)
+        else:
+            x_padded = input.astype(np.float32, copy=False)
+
+        windows = np.lib.stride_tricks.sliding_window_view(
+            x_padded, (k_h, k_w), axis=(2, 3)
+        )
+        windows = windows[:, :, ::self.stride, ::self.stride, :, :]
+
+        kernels = self.kernels.astype(np.float32, copy=False)
+        out = np.einsum('bcijmn,ocmn->boij', windows, kernels, optimize=True)
+        out += self.biases.reshape(1, -1, 1, 1)
         return out.astype(np.float32, copy=False)
 
     def _im2col(self, x):
