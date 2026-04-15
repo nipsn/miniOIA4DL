@@ -157,6 +157,7 @@ class Conv2D(Layer):
         out = out.transpose(1, 0, 2, 3)
         return out.astype(np.float32, copy=False)
 
+    # -- INICIO BLOQUE GENERADO CON IA --
     def _forward_im2col_fused(self, input):
         k_h = k_w = self.kernel_size
 
@@ -178,6 +179,7 @@ class Conv2D(Layer):
         out = np.einsum('bcijmn,ocmn->boij', windows, kernels, optimize=True)
         out += self.biases.reshape(1, -1, 1, 1)
         return out.astype(np.float32, copy=False)
+    # -- FIN BLOQUE GENERADO CON IA --
 
     def _im2col(self, x):
         batch_size, in_channels, in_h, in_w = x.shape

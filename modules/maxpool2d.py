@@ -10,12 +10,13 @@ class MaxPool2D(Layer):
     def forward(self, input, training=True):
         B, C, H, W = input.shape
 
+        # -- INICIO BLOQUE GENERADO CON IA --
         # Fast path for 2x2 kernel with stride 2 and even dimensions (OIAnet)
         if self.kernel_size == 2 and self.stride == 2 and H % 2 == 0 and W % 2 == 0:
             if training:
                 return self._forward_fast_2x2_training(input)
             return self._forward_fast_2x2_inference(input)
-
+        # -- FIN BLOQUE GENERADO CON IA --
         return self._forward_standard(input)
     
     def _forward_standard(self, input):
@@ -48,6 +49,7 @@ class MaxPool2D(Layer):
 
         return output
 
+    # -- INICIO BLOQUE GENERADO CON IA --
     def _forward_fast_2x2_training(self, input):
         self.input = input
         B, C, H, W = input.shape
@@ -86,6 +88,7 @@ class MaxPool2D(Layer):
             np.maximum(x00, x01),
             np.maximum(x10, x11)
         )
+    # -- FIN BLOQUE GENERADO CON IA --
 
     def backward(self, grad_output, learning_rate=None):
         B, C, H, W = self.input.shape
