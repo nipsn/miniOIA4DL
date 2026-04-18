@@ -51,7 +51,9 @@ def test_conv2d():
 
 test_conv2d()
 
+## --- Inicio bloque generado con IA --- ##
 def test_conv2d_im2col_simple():
+    print("Testing Conv2D im2col simple case...")
     img_width = 5
     img_height = 5
     in_channels = 1
@@ -95,17 +97,19 @@ def test_conv2d_im2col_simple():
 
     out = conv.forward(x)
 
-    print("shape esperada:", expected.shape)
-    print("shape obtenida:", out.shape)
+    # print("shape esperada:", expected.shape)
+    # print("shape obtenida:", out.shape)
 
     assert out.shape == expected.shape, f"Shape incorrecta: {out.shape} != {expected.shape}"
-    print("max abs diff:", np.max(np.abs(out - expected)))
+    # print("max abs diff:", np.max(np.abs(out - expected)))
     assert np.allclose(out, expected, atol=1e-6), "im2col no coincide con el caso manual"
+    print("✅ im2col simple passed!")
 
 test_conv2d_im2col_simple()
 
 
 def compare_direct_vs_im2col():
+    print("Comparando direct vs im2col...")
     np.random.seed(0)
 
     in_channels = 3
@@ -145,18 +149,19 @@ def compare_direct_vs_im2col():
 
     diff = np.abs(out_direct - out_im2col)
 
-    print("shape direct :", out_direct.shape)
-    print("shape im2col :", out_im2col.shape)
-    print("max abs diff :", diff.max())
-    print("mean abs diff:", diff.mean())
+    # print("shape direct :", out_direct.shape)
+    # print("shape im2col :", out_im2col.shape)
+    # print("max abs diff :", diff.max())
+    # print("mean abs diff:", diff.mean())
 
     assert out_direct.shape == out_im2col.shape
-    assert np.allclose(out_direct, out_im2col, atol=1e-5, rtol=1e-5), \
-        "La salida de im2col no coincide con direct"
+    assert np.allclose(out_direct, out_im2col, atol=1e-5, rtol=1e-5), "La salida de im2col no coincide con direct"
+    print("✅ im2col output test passed!")
 
 compare_direct_vs_im2col()
 
 def test_oianet_like_shapes():
+    print("Testing OIANet-like shapes...")
     np.random.seed(7)
 
     shapes = [
@@ -178,14 +183,16 @@ def test_oianet_like_shapes():
         y1 = conv1.forward(x)
 
         diff = np.abs(y0 - y1)
-        print(f"OIANet-like {x.shape} -> max diff {diff.max()} mean diff {diff.mean()}")
+        # print(f"OIANet-like {x.shape} -> max diff {diff.max()} mean diff {diff.mean()}")
 
         assert np.allclose(y0, y1, atol=1e-5, rtol=1e-5)
+    print("✅ im2col shapes test passed!")
 
 test_oianet_like_shapes()
 
 
-def test_conv2d_im2colfused_simple():
+def test_im2colfused_simple():
+    print("Testing im2colfused simple case...")
     img_width = 5
     img_height = 5
     in_channels = 1
@@ -229,18 +236,20 @@ def test_conv2d_im2colfused_simple():
 
     out = conv.forward(x)
 
-    print("shape esperada (fused):", expected.shape)
-    print("shape obtenida (fused):", out.shape)
-    print("max abs diff (fused):", np.max(np.abs(out - expected)))
+    #print("shape esperada (fused):", expected.shape)
+    #print("shape obtenida (fused):", out.shape)
+    #print("max abs diff (fused):", np.max(np.abs(out - expected)))
 
     assert out.shape == expected.shape, f"Shape incorrecta: {out.shape} != {expected.shape}"
     assert np.allclose(out, expected, atol=1e-6), "im2colfused no coincide con el caso manual"
+    print("✅ im2colfused simple passed!")
 
 
-test_conv2d_im2colfused_simple()
+test_im2colfused_simple()
 
 
 def compare_direct_vs_im2colfused():
+    print("Comparing direct vs im2colfused...")
     np.random.seed(1)
 
     in_channels = 3
@@ -280,20 +289,23 @@ def compare_direct_vs_im2colfused():
 
     diff = np.abs(out_direct - out_fused)
 
-    print("shape direct  :", out_direct.shape)
-    print("shape fused   :", out_fused.shape)
-    print("max abs diff  :", diff.max())
-    print("mean abs diff :", diff.mean())
+    # print("shape direct  :", out_direct.shape)
+    # print("shape fused   :", out_fused.shape)
+    # print("max abs diff  :", diff.max())
+    # print("mean abs diff :", diff.mean())
 
     assert out_direct.shape == out_fused.shape
     assert np.allclose(out_direct, out_fused, atol=1e-5, rtol=1e-5), \
         "La salida de im2colfused no coincide con direct"
+    print("✅ im2colfused output test passed!")
 
 
 compare_direct_vs_im2colfused()
 
 
 def test_oianet_like_shapes_im2colfused():
+    print("Testing OIANet-like shapes with im2colfused...")
+
     np.random.seed(9)
 
     shapes = [
@@ -315,9 +327,11 @@ def test_oianet_like_shapes_im2colfused():
         y2 = conv2.forward(x)
 
         diff = np.abs(y0 - y2)
-        print(f"OIANet-like fused {x.shape} -> max diff {diff.max()} mean diff {diff.mean()}")
+        #print(f"OIANet-like fused {x.shape} -> max diff {diff.max()} mean diff {diff.mean()}")
 
         assert np.allclose(y0, y2, atol=1e-5, rtol=1e-5)
+    print("✅ OIANet-like shapes test passed!")
 
 
 test_oianet_like_shapes_im2colfused()
+## --- Fin bloque generado con IA --- ##
