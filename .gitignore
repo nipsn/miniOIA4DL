@@ -1,2 +1,5 @@
 /data
-*.pyc
+*__pycache__*
+/cython_modules/build
+*.c
+*.so
